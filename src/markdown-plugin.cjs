@@ -51,4 +51,4 @@ function extendMarkdownIt(md) {
   });
 }
 
-module.exports = extendMarkdownIt;
+module.exports = { extendMarkdownIt };
