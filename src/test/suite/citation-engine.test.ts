@@ -15,8 +15,9 @@ const localeXml = fs.readFileSync(
 describe("CitationEngine", () => {
   let engine: CitationEngine;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     engine = new CitationEngine(styleXml, localeXml);
+    await engine.init();
   });
 
   it("is not ready before loading a database", () => {

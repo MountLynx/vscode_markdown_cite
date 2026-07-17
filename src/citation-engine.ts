@@ -5,8 +5,60 @@
  * markra_plugin_try/packages/app/src/lib/citation-engine.ts
  */
 import { Engine } from "citeproc";
+import * as https from "https";
 import { loadCitationDatabase } from "./database-loader";
 import type { CitationDatabaseRecord, CitationEntry, CSLItem } from "./types";
+
+/** In-memory cache for dependent CSL parent styles. */
+const styleCache = new Map<string, string>();
+
+/**
+ * Resolve a dependent CSL style by fetching its independent parent.
+ * Returns the parent style XML, or the original if not dependent.
+ */
+async function resolveDependentStyle(xml: string): Promise<string> {
+  // Check if this is a dependent style (has rel="independent-parent")
+  const parentMatch = xml.match(/rel="independent-parent"\s+href="([^"]+)"/);
+  if (!parentMatch) return xml;
+
+  const parentUrl = parentMatch[1];
+  if (styleCache.has(parentUrl)) return styleCache.get(parentUrl)!;
+
+  // Convert Zotero URL to raw GitHub URL
+  // e.g. http://www.zotero.org/styles/elsevier-harvard
+  //   -> https://raw.githubusercontent.com/citation-style-language/styles/master/elsevier-harvard.csl
+  const nameMatch = parentUrl.match(/\/([^\/]+?)(?:\.csl)?$/);
+  if (!nameMatch) return xml;
+  const styleName = nameMatch[1];
+  const rawUrl = `https://raw.githubusercontent.com/citation-style-language/styles/master/${styleName}.csl`;
+
+  try {
+    const content = await httpGet(rawUrl);
+    if (content && content.includes("<style") && content.includes("</style>")) {
+      styleCache.set(parentUrl, content);
+      console.log("[citation] resolved dependent style:", styleName);
+      return content;
+    }
+  } catch (e) {
+    console.warn("[citation] failed to fetch parent style:", styleName, (e as Error).message);
+  }
+  return xml;
+}
+
+function httpGet(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const mod = url.startsWith("https") ? https : https;
+    mod.get(url, { timeout: 5000 }, (res) => {
+      if (res.statusCode !== 200) {
+        reject(new Error(`HTTP ${res.statusCode}`));
+        return;
+      }
+      let data = "";
+      res.on("data", (chunk: Buffer) => (data += chunk.toString()));
+      res.on("end", () => resolve(data));
+    }).on("error", reject);
+  });
+}
 
 function formatAuthors(item: CSLItem): string {
   const author = item.author;
@@ -22,6 +74,7 @@ function extractJournal(item: CSLItem): string {
   ).trim();
 }
 
+/** Extract a year string from a CSL date value (object or literal). */
 function extractYear(dateValue: unknown): string {
   if (!dateValue) return "";
   if (typeof dateValue === "string") return dateValue;
@@ -44,12 +97,21 @@ export class CitationEngine {
   private items: Record<string, CSLItem> = {};
   private databases = new Map<string, CitationDatabaseRecord>();
   private engine: Engine | null = null;
+  private resolvedXml: string;
 
   constructor(
     private readonly styleXml: string,
     private readonly localeXml: string,
     private readonly lang = "en-US"
-  ) {}
+  ) {
+    this.resolvedXml = styleXml;
+  }
+
+  /** Must be called after constructor to resolve dependent styles. */
+  async init(): Promise<void> {
+    this.resolvedXml = await resolveDependentStyle(this.styleXml);
+    this.rebuild();
+  }
 
   private rebuild(): void {
     const sys = {
@@ -57,7 +119,7 @@ export class CitationEngine {
       retrieveItem: (id: string) => this.items[id],
     };
     try {
-      this.engine = new Engine(sys, this.styleXml, this.lang, true);
+      this.engine = new Engine(sys, this.resolvedXml, this.lang, true);
       this.engine.opt.development_extensions.wrap_url_and_doi = true;
       this.engine.updateItems(Object.keys(this.items));
     } catch {
@@ -92,7 +154,6 @@ export class CitationEngine {
     if (!this.engine) return undefined;
     try {
       const result = this.engine.makeCitationCluster(citekeys.map((id) => ({ id })));
-      // citeproc returns "[NO_PRINTED_FORM]" when the CSL style has no citation layout
       if (!result || result === "[NO_PRINTED_FORM]") return undefined;
       return result;
     } catch {

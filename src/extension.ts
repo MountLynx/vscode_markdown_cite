@@ -44,6 +44,7 @@ async function loadEngine(
   const styleXml = fs.readFileSync(stylePath, "utf-8");
   const localeXml = fs.readFileSync(localePath, "utf-8");
   const eng = new CitationEngine(styleXml, localeXml);
+  await eng.init();
 
   if (settings.bibliography && fs.existsSync(settings.bibliography)) {
     const content = fs.readFileSync(settings.bibliography, "utf-8");
