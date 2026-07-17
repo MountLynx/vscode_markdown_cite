@@ -149,11 +149,16 @@ function citationPlugin(md: any) {
       if (token.type === "inline" && token.children) {
         for (const child of token.children) {
           if (child.type === "text") {
-            child.content = child.content.replace(pattern, (match: string) => {
+            const replaced = child.content.replace(pattern, (match: string) => {
               const keys = extractCitekeys(match);
               const rendered = engine!.renderCitation(keys);
-              return rendered ?? match;
+              if (!rendered) return match;
+              return `<span style="color:var(--vscode-textLink-foreground)">${rendered}</span>`;
             });
+            if (replaced !== child.content) {
+              child.type = "html_inline";
+              child.content = replaced;
+            }
           }
         }
       }
