@@ -241,7 +241,9 @@ export function activate(context: vscode.ExtensionContext) {
                 );
                 child.content = child.content.replace(pattern, (match: string) => {
                   const keys = extractCitekeys(match);
-                  return engine!.renderCitation(keys) ?? match;
+                  const rendered = engine!.renderCitation(keys);
+                  console.log("[citation] replace:", match, "-> keys:", keys, "-> rendered:", rendered);
+                  return rendered ?? match;
                 });
               }
             }
