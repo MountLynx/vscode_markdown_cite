@@ -5,33 +5,11 @@ import { CitationEngine } from "./citation-engine";
 import { CitationPanelProvider } from "./panel";
 import { CitationDecorator } from "./decorations";
 import { exportDocx } from "./pandoc-exporter";
-import { extractCitekeys, CITATION_PATTERN } from "./citation-pattern";
+import { extractCitekeys } from "./citation-pattern";
 import type { CitationSettings } from "./types";
 
-// Inline extendMarkdownIt to avoid esbuild re-export issues.
-// VS Code calls this when markdown.markdownItPlugins is true.
-export function extendMarkdownIt(md: any): void {
-  console.log("[citation] extendMarkdownIt called, engine ready:", engine?.isReady ?? false);
-
-  md.core.ruler.after("inline", "citation-render", (state: any) => {
-    if (!engine || !engine.isReady) return false;
-
-    for (const token of state.tokens) {
-      if (token.type === "inline" && token.children) {
-        for (const child of token.children) {
-          if (child.type === "text") {
-            const pattern = new RegExp(CITATION_PATTERN.source, "g");
-            child.content = child.content.replace(pattern, (match: string) => {
-              const keys = extractCitekeys(match);
-              return engine!.renderCitation(keys) ?? match;
-            });
-          }
-        }
-      }
-    }
-    return false;
-  });
-}
+// Expose engine globally for the standalone markdown-it plugin (markdown-plugin.cjs)
+declare global { var __citationEngine: CitationEngine | null; }
 
 let engine: CitationEngine | null = null;
 let panelProvider: CitationPanelProvider | null = null;
@@ -84,6 +62,7 @@ async function refreshEngine(context: vscode.ExtensionContext): Promise<void> {
 
   engine?.dispose();
   engine = await loadEngine(settings, context);
+  globalThis.__citationEngine = engine;
 }
 
 async function pushPanelState(): Promise<void> {
@@ -253,6 +232,7 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
   engine?.dispose();
   engine = null;
+  globalThis.__citationEngine = null;
   decorator?.dispose();
   decorator = null;
 }
