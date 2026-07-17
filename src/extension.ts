@@ -167,12 +167,17 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("citation.exportDocx", onExportDocx)
   );
 
-  refreshEngine(context).then(() => {
+  refreshEngine(context).then(async () => {
     decorator = new CitationDecorator(engine!);
     context.subscriptions.push(decorator.installHoverProvider());
 
     // Refresh preview now that engine is ready
-    vscode.commands.executeCommand("markdown.preview.refresh");
+    try {
+      await vscode.commands.executeCommand("markdown.preview.refresh");
+      console.log("[citation] preview refreshed after engine load");
+    } catch (e) {
+      console.warn("[citation] preview refresh failed:", (e as Error).message);
+    }
 
     context.subscriptions.push(
       vscode.window.onDidChangeActiveTextEditor(async (editor) => {
