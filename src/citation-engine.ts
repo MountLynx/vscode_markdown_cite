@@ -20,10 +20,10 @@ const memCache = new Map<string, string>();
  * Caches downloaded styles to disk under cacheDir.
  */
 async function resolveDependentStyle(xml: string, cacheDir?: string): Promise<string> {
-  const parentMatch = xml.match(/rel="independent-parent"\s+href="([^"]+)"/);
+  const parentMatch = xml.match(/rel="independent-parent"[^>]*href="([^"]+)"|href="([^"]+)"[^>]*rel="independent-parent"/);
   if (!parentMatch) return xml;
 
-  const parentUrl = parentMatch[1];
+  const parentUrl = parentMatch[1] || parentMatch[2];
 
   // Check memory cache first
   if (memCache.has(parentUrl)) return memCache.get(parentUrl)!;
