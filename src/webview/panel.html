@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="panel.css" />
+</head>
+<body>
+  <header class="toolbar">
+    <button id="btn-library" class="mode-btn active">Library</button>
+    <button id="btn-reference" class="mode-btn">Reference</button>
+  </header>
+
+  <div class="search-bar">
+    <input id="search-input" type="text" placeholder="Search citations..." />
+  </div>
+
+  <div class="locator-bar">
+    <select id="locator-type">
+      <option value="">—</option>
+      <option value="p.">p.</option>
+      <option value="pp.">pp.</option>
+      <option value="ch.">ch.</option>
+      <option value="sec.">sec.</option>
+      <option value="fig.">fig.</option>
+      <option value="eq.">eq.</option>
+      <option value="table">table</option>
+      <option value="vol.">vol.</option>
+      <option value="note">note</option>
+    </select>
+    <input id="locator-value" type="text" placeholder="locator value" />
+  </div>
+
+  <ol id="entry-list" class="entry-list"></ol>
+
+  <p id="empty-msg" class="empty-msg hidden">No citations found.</p>
+
+  <footer class="export-bar">
+    <button id="btn-export" class="export-btn">📦 Export DOCX</button>
+  </footer>
+
+  <script src="panel.js"></script>
+</body>
+</html>
