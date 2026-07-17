@@ -177,6 +177,9 @@ export function activate(context: vscode.ExtensionContext) {
     decorator = new CitationDecorator(engine!);
     context.subscriptions.push(decorator.installHoverProvider());
 
+    // Refresh preview now that engine is ready
+    vscode.commands.executeCommand("markdown.preview.refresh");
+
     context.subscriptions.push(
       vscode.window.onDidChangeActiveTextEditor(async (editor) => {
         if (editor && editor.document.languageId === "markdown") {

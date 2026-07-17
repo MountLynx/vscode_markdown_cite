@@ -15,38 +15,38 @@ export function setCitationEngineForPreview(engine: CitationEngine | null): void
   citationEngine = engine;
 }
 
+function replaceMarkers(text: string): string {
+  if (!citationEngine || !citationEngine.isReady) return text;
+  const pattern = new RegExp(CITATION_PATTERN.source, "g");
+  return text.replace(pattern, (match: string) => {
+    const keys = extractCitekeys(match);
+    const rendered = citationEngine!.renderCitation(keys);
+    return rendered ?? match;
+  });
+}
+
 /**
  * The function VS Code calls to extend the built-in markdown-it instance.
  * Re-exported from extension.ts.
+ *
+ * Uses the core ruler to walk all tokens and replace citation markers
+ * in inline text content after full parsing is complete.
  */
 export function extendMarkdownIt(md: any): void {
-  const defaultRender =
-    md.renderer.rules.text ||
-    function (tokens: any[], idx: number) {
-      return md.utils.escapeHtml(tokens[idx].content);
-    };
+  console.log("[citation] extendMarkdownIt called, engine ready:", citationEngine?.isReady ?? false);
 
-  md.renderer.rules.text = function (
-    tokens: any[],
-    idx: number,
-    options: any,
-    env: any,
-    self: any
-  ) {
-    const content = tokens[idx].content;
-    if (!citationEngine || !citationEngine.isReady) {
-      return defaultRender(tokens, idx, options, env, self);
+  md.core.ruler.after("inline", "citation-render", (state: any) => {
+    if (!citationEngine || !citationEngine.isReady) return false;
+
+    for (const token of state.tokens) {
+      if (token.type === "inline" && token.children) {
+        for (const child of token.children) {
+          if (child.type === "text") {
+            child.content = replaceMarkers(child.content);
+          }
+        }
+      }
     }
-
-    // Replace citation markers inline
-    const pattern = new RegExp(CITATION_PATTERN.source, "g");
-    const result = content.replace(pattern, (match: string) => {
-      const keys = extractCitekeys(match);
-      const rendered = citationEngine!.renderCitation(keys);
-      return rendered ?? match;
-    });
-
-    tokens[idx].content = result;
-    return defaultRender(tokens, idx, options, env, self);
-  };
+    return false;
+  });
 }
