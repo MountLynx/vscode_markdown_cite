@@ -4,6 +4,8 @@ import type { CitationEntry } from "./types";
 
 export class CitationPanelProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
+  private pendingEntries: CitationEntry[] = [];
+  private pendingCitekeys: string[] = [];
 
   constructor(
     private readonly extensionUri: vscode.Uri,
@@ -26,6 +28,8 @@ export class CitationPanelProvider implements vscode.WebviewViewProvider {
     webviewView.webview.onDidReceiveMessage((msg) => {
       switch (msg.command) {
         case "ready":
+          // Push any pending entries when WebView signals ready
+          this.push();
           break;
         case "insert":
           this.onInsert(msg.citekey, msg.locator);
@@ -38,16 +42,22 @@ export class CitationPanelProvider implements vscode.WebviewViewProvider {
   }
 
   setEntries(entries: CitationEntry[], documentCitekeys: string[]): void {
-    this._view?.webview.postMessage({
-      command: "setEntries",
-      entries,
-      documentCitekeys,
-    });
+    this.pendingEntries = entries;
+    this.pendingCitekeys = documentCitekeys;
+    this.push();
   }
 
   exportDone(success: boolean): void {
     this._view?.webview.postMessage({
       command: success ? "exportDone" : "exportError",
+    });
+  }
+
+  private push(): void {
+    this._view?.webview.postMessage({
+      command: "setEntries",
+      entries: this.pendingEntries,
+      documentCitekeys: this.pendingCitekeys,
     });
   }
 
