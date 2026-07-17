@@ -76,8 +76,11 @@ async function resolveDependentStyle(xml: string, cacheDir?: string): Promise<st
 
 function httpGet(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const mod = url.startsWith("https") ? https : https;
-    mod.get(url, { timeout: 5000 }, (res) => {
+    const options = {
+      timeout: 5000,
+      headers: { "User-Agent": "vscode-citation-extension" },
+    };
+    https.get(url, options, (res) => {
       if (res.statusCode !== 200) {
         reject(new Error(`HTTP ${res.statusCode}`));
         return;
