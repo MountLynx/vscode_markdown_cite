@@ -56,7 +56,7 @@
       }
     ],
     "viewsContainers": {
-      "panel": [
+      "activitybar": [
         {
           "id": "citation",
           "title": "Citations",
