@@ -5,7 +5,6 @@
  * markra_plugin_try/packages/app/src/lib/citation-engine.ts
  */
 import { Engine } from "citeproc";
-import * as https from "https";
 import * as fs from "fs";
 import * as path from "path";
 import { loadCitationDatabase } from "./database-loader";
@@ -74,22 +73,13 @@ async function resolveDependentStyle(xml: string, cacheDir?: string): Promise<st
   return xml;
 }
 
-function httpGet(url: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const options = {
-      timeout: 5000,
-      headers: { "User-Agent": "vscode-citation-extension" },
-    };
-    https.get(url, options, (res) => {
-      if (res.statusCode !== 200) {
-        reject(new Error(`HTTP ${res.statusCode}`));
-        return;
-      }
-      let data = "";
-      res.on("data", (chunk: Buffer) => (data += chunk.toString()));
-      res.on("end", () => resolve(data));
-    }).on("error", reject);
+async function httpGet(url: string): Promise<string> {
+  const res = await fetch(url, {
+    signal: AbortSignal.timeout(5000),
+    headers: { "User-Agent": "vscode-citation" },
   });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.text();
 }
 
 function formatAuthors(item: CSLItem): string {
