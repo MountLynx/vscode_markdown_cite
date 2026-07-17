@@ -5,7 +5,7 @@ import { CitationEngine } from "./citation-engine";
 import { CitationPanelProvider } from "./panel";
 import { CitationDecorator } from "./decorations";
 import { exportDocx } from "./pandoc-exporter";
-import { extractCitekeys } from "./citation-pattern";
+import { extractCitekeys, CITATION_PATTERN } from "./citation-pattern";
 import type { CitationSettings } from "./types";
 
 let engine: CitationEngine | null = null;
@@ -139,6 +139,31 @@ async function onExportDocx(): Promise<void> {
   }
 }
 
+/** markdown-it plugin: replaces Pandoc citation markers with formatted text. */
+function citationPlugin(md: any) {
+  md.core.ruler.after("inline", "citation-render", (state: any) => {
+    if (!engine || !engine.isReady) return false;
+    const pattern = new RegExp(CITATION_PATTERN.source, "g");
+
+    for (const token of state.tokens) {
+      if (token.type === "inline" && token.children) {
+        for (const child of token.children) {
+          if (child.type === "text") {
+            child.content = child.content.replace(pattern, (match: string) => {
+              const keys = extractCitekeys(match);
+              const rendered = engine!.renderCitation(keys);
+              console.log("[citation] render:", match, "->", rendered ?? "(no render)");
+              if (!rendered || rendered === "[NO_PRINTED_FORM]") return match;
+              return rendered;
+            });
+          }
+        }
+      }
+    }
+    return false;
+  });
+}
+
 export function activate(context: vscode.ExtensionContext) {
   console.log("citation: activating");
   extensionContext = context;
@@ -234,31 +259,8 @@ export function activate(context: vscode.ExtensionContext) {
     extendMarkdownIt(md: any) {
       console.log("[citation] extendMarkdownIt called, engine ready:", engine?.isReady ?? false);
 
-      md.core.ruler.after("inline", "citation-render", (state: any) => {
-        if (!engine || !engine.isReady) return false;
-
-        for (const token of state.tokens) {
-          if (token.type === "inline" && token.children) {
-            for (const child of token.children) {
-              if (child.type === "text") {
-                const pattern = new RegExp(
-                  /\[-?@[A-Za-z][\w:.\-+]*(?:\s*;\s*-?@[A-Za-z][\w:.\-+]*)*[^\]]*\]|-?@[A-Za-z][\w:.\-+]*/.source,
-                  "g"
-                );
-                child.content = child.content.replace(pattern, (match: string) => {
-                  const keys = extractCitekeys(match);
-                  const rendered = engine!.renderCitation(keys);
-                  // citeproc returns [NO_PRINTED_FORM] when style has no citation layout
-                  if (!rendered || rendered === "[NO_PRINTED_FORM]") return match;
-                  return rendered;
-                });
-              }
-            }
-          }
-        }
-        return false;
-      });
-
+      // Use official markdown-it plugin pattern
+      md.use(citationPlugin);
       return md;
     },
   };
