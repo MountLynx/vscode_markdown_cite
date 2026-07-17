@@ -12,7 +12,8 @@ const config = {
   target: "node18",
   outdir: "dist",
   sourcemap: !production,
-  minify: production,
+  minify: false,
+  treeShaking: true,
 };
 
 async function main() {
