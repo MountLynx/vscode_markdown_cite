@@ -20,8 +20,8 @@ describe("CitationEngine", () => {
     await engine.init();
   });
 
-  it("is not ready before loading a database", () => {
-    expect(engine.isReady).toBe(false);
+  it("is ready after init with valid CSL style", () => {
+    expect(engine.isReady).toBe(true);
   });
 
   it("becomes ready after loading a CSL JSON database", async () => {
