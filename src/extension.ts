@@ -152,9 +152,7 @@ function citationPlugin(md: any) {
             child.content = child.content.replace(pattern, (match: string) => {
               const keys = extractCitekeys(match);
               const rendered = engine!.renderCitation(keys);
-              console.log("[citation] render:", match, "->", rendered ?? "(no render)");
-              if (!rendered || rendered === "[NO_PRINTED_FORM]") return match;
-              return rendered;
+              return rendered ?? match;
             });
           }
         }
@@ -257,11 +255,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   return {
     extendMarkdownIt(md: any) {
-      console.log("[citation] extendMarkdownIt called, engine ready:", engine?.isReady ?? false);
-
-      // Use official markdown-it plugin pattern
-      md.use(citationPlugin);
-      return md;
+      return md.use(citationPlugin);
     },
   };
 }

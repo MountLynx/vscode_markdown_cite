@@ -20,10 +20,7 @@ const memCache = new Map<string, string>();
  */
 async function resolveDependentStyle(xml: string, cacheDir?: string): Promise<string> {
   const parentMatch = xml.match(/rel="independent-parent"[^>]*href="([^"]+)"|href="([^"]+)"[^>]*rel="independent-parent"/);
-  if (!parentMatch) {
-    console.log("[citation] not a dependent style");
-    return xml;
-  }
+  if (!parentMatch) return xml;
 
   const parentUrl = parentMatch[1] || parentMatch[2];
 
@@ -132,9 +129,7 @@ export class CitationEngine {
 
   /** Must be called after constructor to resolve dependent styles. */
   async init(): Promise<void> {
-    console.log("[citation] init engine, style length:", this.styleXml.length);
     this.resolvedXml = await resolveDependentStyle(this.styleXml, this.cacheDir);
-    console.log("[citation] resolved style length:", this.resolvedXml.length);
     this.rebuild();
   }
 
