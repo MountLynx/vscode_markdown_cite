@@ -66,10 +66,16 @@ async function loadBibLaTeX(
     processUnknown: true,
   });
   const bib = await parser.parseAsync();
-  const exporter = new CSLExporter(bib.entries, false, { useEntryKeys: true } as any);
+  const exporter = new CSLExporter(bib.entries, false);
   const cslOutput = exporter.parse() as Record<string, CSLItem>;
-  for (const [key, item] of Object.entries(cslOutput)) {
-    record.cslData[key] = item;
+
+  // biblatex-csl-converter v2 indexes entries by number, not citekey.
+  // Remap numeric keys to actual citekeys from entry_key.
+  for (const [numericKey, item] of Object.entries(cslOutput)) {
+    const bibEntry = bib.entries[Number(numericKey)];
+    const citekey: string = bibEntry?.entry_key ?? String(item.id ?? numericKey);
+    record.cslData[citekey] = item;
+    item.id = citekey;
   }
   return record;
 }

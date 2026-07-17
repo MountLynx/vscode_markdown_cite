@@ -3,12 +3,13 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("biblatex-csl-converter", () => {
   class MockBibLatexParser {
     parseAsync = vi.fn().mockResolvedValue({
-      entries: { smith2024: { unexpected_fields: {}, id: "smith2024" } },
+      // Real library uses numeric keys, each entry has entry_key
+      entries: { 1: { entry_key: "smith2024", unexpected_fields: {}, id: "smith2024" } },
       errors: [],
     });
   }
   class MockCSLExporter {
-    parse = () => ({ smith2024: { id: "smith2024", type: "article", title: "A Study" } });
+    parse = () => ({ 1: { id: "smith2024", type: "article", title: "A Study" } });
   }
   return { BibLatexParser: MockBibLatexParser, CSLExporter: MockCSLExporter };
 });
