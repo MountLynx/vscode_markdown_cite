@@ -1,0 +1,84 @@
+{
+  "name": "vscode-citation",
+  "displayName": "Citation",
+  "description": "Pandoc citation sidebar with citeproc preview and DOCX export",
+  "version": "0.1.0",
+  "publisher": "mountlynx",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Citation",
+      "properties": {
+        "citation.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the citation sidebar panel"
+        },
+        "citation.bibliography": {
+          "type": "string",
+          "default": "",
+          "description": "Path to bibliography file (.bib, .json, .yaml)"
+        },
+        "citation.cslPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to CSL style file (empty = built-in chicago-author-date)"
+        },
+        "citation.pandocPath": {
+          "type": "string",
+          "default": "",
+          "description": "Pandoc executable path (empty = auto-detect from PATH)"
+        },
+        "citation.referenceDocPath": {
+          "type": "string",
+          "default": "",
+          "description": "DOCX reference document path for Pandoc --reference-doc"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "citation.openPanel",
+        "title": "Citation: Open Panel"
+      },
+      {
+        "command": "citation.exportDocx",
+        "title": "Citation: Export DOCX"
+      }
+    ],
+    "markdown.markdownItPlugins": true
+  },
+  "scripts": {
+    "vscode:prepublish": "node esbuild.js --production",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "pretest": "npm run compile",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^26.1.1",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^2.3.9",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.2.0"
+  },
+  "dependencies": {
+    "astrocite-bibtex": "^0.16.0",
+    "biblatex-csl-converter": "^2.1.0",
+    "citeproc": "^2.4.0",
+    "js-yaml": "^4.1.0"
+  }
+}
