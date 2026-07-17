@@ -91,9 +91,12 @@ export class CitationEngine {
   renderCitation(citekeys: string[]): string | undefined {
     if (!this.engine) return undefined;
     try {
-      return this.engine.makeCitationCluster(citekeys.map((id) => ({ id })));
+      const result = this.engine.makeCitationCluster(citekeys.map((id) => ({ id })));
+      // citeproc returns "[NO_PRINTED_FORM]" when the CSL style has no citation layout
+      if (!result || result === "[NO_PRINTED_FORM]") return undefined;
+      return result;
     } catch {
-      return `[???]`;
+      return undefined;
     }
   }
 
