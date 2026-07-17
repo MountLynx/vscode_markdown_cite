@@ -66,7 +66,7 @@ async function loadBibLaTeX(
     processUnknown: true,
   });
   const bib = await parser.parseAsync();
-  const exporter = new CSLExporter(bib.entries, false, { useEntryKeys: true });
+  const exporter = new CSLExporter(bib.entries, false, { useEntryKeys: true } as any);
   const cslOutput = exporter.parse() as Record<string, CSLItem>;
   for (const [key, item] of Object.entries(cslOutput)) {
     record.cslData[key] = item;
