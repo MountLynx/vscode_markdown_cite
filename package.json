@@ -55,6 +55,24 @@
         "title": "Citation: Export DOCX"
       }
     ],
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "citation",
+          "title": "Citations",
+          "icon": "$(book)"
+        }
+      ]
+    },
+    "views": {
+      "citation": [
+        {
+          "id": "citation.panel",
+          "name": "Citations",
+          "type": "webview"
+        }
+      ]
+    },
     "markdown.markdownItPlugins": true
   },
   "scripts": {
