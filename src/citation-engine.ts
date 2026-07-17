@@ -6,37 +6,63 @@
  */
 import { Engine } from "citeproc";
 import * as https from "https";
+import * as fs from "fs";
+import * as path from "path";
 import { loadCitationDatabase } from "./database-loader";
 import type { CitationDatabaseRecord, CitationEntry, CSLItem } from "./types";
 
 /** In-memory cache for dependent CSL parent styles. */
-const styleCache = new Map<string, string>();
+const memCache = new Map<string, string>();
 
 /**
  * Resolve a dependent CSL style by fetching its independent parent.
  * Returns the parent style XML, or the original if not dependent.
+ * Caches downloaded styles to disk under cacheDir.
  */
-async function resolveDependentStyle(xml: string): Promise<string> {
-  // Check if this is a dependent style (has rel="independent-parent")
+async function resolveDependentStyle(xml: string, cacheDir?: string): Promise<string> {
   const parentMatch = xml.match(/rel="independent-parent"\s+href="([^"]+)"/);
   if (!parentMatch) return xml;
 
   const parentUrl = parentMatch[1];
-  if (styleCache.has(parentUrl)) return styleCache.get(parentUrl)!;
 
-  // Convert Zotero URL to raw GitHub URL
-  // e.g. http://www.zotero.org/styles/elsevier-harvard
-  //   -> https://raw.githubusercontent.com/citation-style-language/styles/master/elsevier-harvard.csl
+  // Check memory cache first
+  if (memCache.has(parentUrl)) return memCache.get(parentUrl)!;
+
   const nameMatch = parentUrl.match(/\/([^\/]+?)(?:\.csl)?$/);
   if (!nameMatch) return xml;
   const styleName = nameMatch[1];
-  const rawUrl = `https://raw.githubusercontent.com/citation-style-language/styles/master/${styleName}.csl`;
 
+  // Check disk cache
+  if (cacheDir) {
+    const cachePath = path.join(cacheDir, styleName + ".csl");
+    try {
+      if (fs.existsSync(cachePath)) {
+        const cached = fs.readFileSync(cachePath, "utf-8");
+        if (cached.includes("<style") && cached.includes("</style>")) {
+          memCache.set(parentUrl, cached);
+          console.log("[citation] loaded cached style:", styleName);
+          return cached;
+        }
+      }
+    } catch { /* disk cache miss */ }
+  }
+
+  // Fetch from GitHub
+  const rawUrl = `https://raw.githubusercontent.com/citation-style-language/styles/master/${styleName}.csl`;
   try {
     const content = await httpGet(rawUrl);
     if (content && content.includes("<style") && content.includes("</style>")) {
-      styleCache.set(parentUrl, content);
-      console.log("[citation] resolved dependent style:", styleName);
+      memCache.set(parentUrl, content);
+
+      // Save to disk cache
+      if (cacheDir) {
+        try {
+          if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
+          fs.writeFileSync(path.join(cacheDir, styleName + ".csl"), content, "utf-8");
+        } catch { /* disk write failed, non-critical */ }
+      }
+
+      console.log("[citation] downloaded dependent style:", styleName);
       return content;
     }
   } catch (e) {
@@ -102,14 +128,15 @@ export class CitationEngine {
   constructor(
     private readonly styleXml: string,
     private readonly localeXml: string,
-    private readonly lang = "en-US"
+    private readonly lang = "en-US",
+    private readonly cacheDir?: string
   ) {
     this.resolvedXml = styleXml;
   }
 
   /** Must be called after constructor to resolve dependent styles. */
   async init(): Promise<void> {
-    this.resolvedXml = await resolveDependentStyle(this.styleXml);
+    this.resolvedXml = await resolveDependentStyle(this.styleXml, this.cacheDir);
     this.rebuild();
   }
 
