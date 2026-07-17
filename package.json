@@ -73,11 +73,7 @@
         }
       ]
     },
-    "markdown.markdownItPlugins": [
-      {
-        "path": "./markdown-plugin.cjs"
-      }
-    ]
+    "markdown.markdownItPlugins": true
   },
   "scripts": {
     "vscode:prepublish": "node esbuild.js --production",

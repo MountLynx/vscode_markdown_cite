@@ -8,9 +8,6 @@ import { exportDocx } from "./pandoc-exporter";
 import { extractCitekeys } from "./citation-pattern";
 import type { CitationSettings } from "./types";
 
-// Expose engine globally for the standalone markdown-it plugin (markdown-plugin.cjs)
-declare global { var __citationEngine: CitationEngine | null; }
-
 let engine: CitationEngine | null = null;
 let panelProvider: CitationPanelProvider | null = null;
 let decorator: CitationDecorator | null = null;
@@ -62,7 +59,6 @@ async function refreshEngine(context: vscode.ExtensionContext): Promise<void> {
 
   engine?.dispose();
   engine = await loadEngine(settings, context);
-  globalThis.__citationEngine = engine;
 }
 
 async function pushPanelState(): Promise<void> {
@@ -227,12 +223,41 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   console.log("citation: activated");
+
+  return {
+    extendMarkdownIt(md: any) {
+      console.log("[citation] extendMarkdownIt called, engine ready:", engine?.isReady ?? false);
+
+      md.core.ruler.after("inline", "citation-render", (state: any) => {
+        if (!engine || !engine.isReady) return false;
+
+        for (const token of state.tokens) {
+          if (token.type === "inline" && token.children) {
+            for (const child of token.children) {
+              if (child.type === "text") {
+                const pattern = new RegExp(
+                  /\[-?@[A-Za-z][\w:.\-+]*(?:\s*;\s*-?@[A-Za-z][\w:.\-+]*)*[^\]]*\]|-?@[A-Za-z][\w:.\-+]*/.source,
+                  "g"
+                );
+                child.content = child.content.replace(pattern, (match: string) => {
+                  const keys = extractCitekeys(match);
+                  return engine!.renderCitation(keys) ?? match;
+                });
+              }
+            }
+          }
+        }
+        return false;
+      });
+
+      return md;
+    },
+  };
 }
 
 export function deactivate() {
   engine?.dispose();
   engine = null;
-  globalThis.__citationEngine = null;
   decorator?.dispose();
   decorator = null;
 }
