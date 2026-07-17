@@ -75,7 +75,7 @@
     },
     "markdown.markdownItPlugins": [
       {
-        "path": "./src/markdown-plugin.cjs"
+        "path": "./markdown-plugin.cjs"
       }
     ]
   },
