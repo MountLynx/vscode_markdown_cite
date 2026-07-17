@@ -5,12 +5,33 @@ import { CitationEngine } from "./citation-engine";
 import { CitationPanelProvider } from "./panel";
 import { CitationDecorator } from "./decorations";
 import { exportDocx } from "./pandoc-exporter";
-import { extractCitekeys } from "./citation-pattern";
-import { setCitationEngineForPreview } from "./markdown-it-plugin";
+import { extractCitekeys, CITATION_PATTERN } from "./citation-pattern";
 import type { CitationSettings } from "./types";
 
-// Re-export for VS Code's markdown-it plugin system
-export { extendMarkdownIt } from "./markdown-it-plugin";
+// Inline extendMarkdownIt to avoid esbuild re-export issues.
+// VS Code calls this when markdown.markdownItPlugins is true.
+export function extendMarkdownIt(md: any): void {
+  console.log("[citation] extendMarkdownIt called, engine ready:", engine?.isReady ?? false);
+
+  md.core.ruler.after("inline", "citation-render", (state: any) => {
+    if (!engine || !engine.isReady) return false;
+
+    for (const token of state.tokens) {
+      if (token.type === "inline" && token.children) {
+        for (const child of token.children) {
+          if (child.type === "text") {
+            const pattern = new RegExp(CITATION_PATTERN.source, "g");
+            child.content = child.content.replace(pattern, (match: string) => {
+              const keys = extractCitekeys(match);
+              return engine!.renderCitation(keys) ?? match;
+            });
+          }
+        }
+      }
+    }
+    return false;
+  });
+}
 
 let engine: CitationEngine | null = null;
 let panelProvider: CitationPanelProvider | null = null;
@@ -63,7 +84,6 @@ async function refreshEngine(context: vscode.ExtensionContext): Promise<void> {
 
   engine?.dispose();
   engine = await loadEngine(settings, context);
-  setCitationEngineForPreview(engine);
 }
 
 async function pushPanelState(): Promise<void> {
@@ -146,8 +166,6 @@ async function onExportDocx(): Promise<void> {
 export function activate(context: vscode.ExtensionContext) {
   console.log("citation: activating");
   extensionContext = context;
-
-  setCitationEngineForPreview(null);
 
   panelProvider = new CitationPanelProvider(
     context.extensionUri,
@@ -237,5 +255,4 @@ export function deactivate() {
   engine = null;
   decorator?.dispose();
   decorator = null;
-  setCitationEngineForPreview(null);
 }
