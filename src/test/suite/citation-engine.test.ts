@@ -46,9 +46,9 @@ describe("CitationEngine", () => {
     expect(rendered!).toContain("2024");
   });
 
-  it("returns a string for unknown citekey (does not throw)", () => {
+  it("returns undefined for unknown citekey (does not throw)", () => {
     const rendered = engine.renderCitation(["nonexistent"]);
-    expect(typeof rendered).toBe("string");
+    expect(rendered).toBeUndefined();
   });
 
   it("getEntries returns entries sorted by key", () => {
