@@ -73,7 +73,7 @@ async function resolveDependentStyle(xml: string, cacheDir?: string): Promise<st
 async function httpGet(url: string): Promise<string> {
   const res = await fetch(url, {
     signal: AbortSignal.timeout(5000),
-    headers: { "User-Agent": "vscode-citation" },
+    headers: { "User-Agent": "pandoc-cite" },
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.text();

@@ -1,9 +1,14 @@
 {
-  "name": "vscode-citation",
-  "displayName": "Citation",
-  "description": "Pandoc citation sidebar with citeproc preview and DOCX export",
+  "name": "pandoc-cite",
+  "displayName": "Pandoc Cite",
+  "description": "Browse, insert, preview Pandoc citations with sidebar panel and one-click DOCX export",
   "version": "0.1.0",
   "publisher": "mountlynx",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MountLynx/pandoc-cite"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
