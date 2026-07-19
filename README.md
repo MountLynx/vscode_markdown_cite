@@ -9,10 +9,6 @@ Browse, insert, and preview Pandoc-style citations with a sidebar panel. Support
 
 > [中文说明](README.zh-CN.md)
 
-<p align="center">
-  <img src="assets/screenshot.png" alt="Screenshot" width="700" />
-</p>
-
 ## Features
 
 - **Sidebar Citations** — Search and browse references in Library or Reference (cited in document) mode
