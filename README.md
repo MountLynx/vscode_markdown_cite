@@ -3,7 +3,7 @@
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
 </p>
 
-# Pandoc Cite
+# Markdown Cite
 
 Browse, insert, and preview Pandoc-style citations with a sidebar panel. Supports bib/json/yaml databases, citeproc rendering, and one-click DOCX export via Pandoc.
 

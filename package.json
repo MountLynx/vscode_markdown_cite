@@ -1,6 +1,6 @@
 {
-  "name": "pandoc-cite",
-  "displayName": "Pandoc Cite",
+  "name": "markdown-cite",
+  "displayName": "Markdown Cite",
   "description": "Browse, insert, preview Pandoc citations with sidebar panel and one-click DOCX export",
   "version": "0.1.0",
   "publisher": "mountlynx",

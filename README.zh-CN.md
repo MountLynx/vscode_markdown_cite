@@ -3,7 +3,7 @@
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
 </p>
 
-# Pandoc Cite
+# Markdown Cite
 
 Markdown 写作的 Pandoc 引文助手。侧边栏浏览文献库、点击插入引注标记、预览中实时渲染、一键导出 DOCX。
 
